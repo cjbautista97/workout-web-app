@@ -112,6 +112,26 @@ textarea {
   color: #94a3b8;
 }
 
+.today-navigation {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.nav-button {
+  background: transparent;
+  border: 1px solid #374151;
+  color: #e8eef5;
+  padding: 0.6rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.nav-button:hover {
+  background: rgba(37, 99, 235, 0.12);
+}
+
 .weekly-calendar {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
