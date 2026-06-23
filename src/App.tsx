@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AppData, AppView, defaultAppData, loadAppData, saveAppData } from './data';
+import {
+  AppData,
+  AppView,
+  RunLogEntry,
+  WeightsLogEntry,
+  defaultAppData,
+  loadAppData,
+  saveAppData,
+} from './data';
 import { TodayView } from './views/TodayView';
 import { WorkoutLibraryView } from './views/WorkoutLibraryView';
 import { WeeklyPlanView } from './views/WeeklyPlanView';
@@ -17,7 +25,11 @@ const views: { key: AppView; label: string }[] = [
 function App() {
   const [view, setView] = useState<AppView>('today');
   const [data, setData] = useState<AppData>(defaultAppData);
-  const [logWorkoutTemplateId, setLogWorkoutTemplateId] = useState<string | null>(null);
+  const [logWorkoutModalState, setLogWorkoutModalState] = useState<
+    | { mode: 'new'; templateId: string }
+    | { mode: 'edit'; type: 'running' | 'weights'; entry: RunLogEntry | WeightsLogEntry }
+    | null
+  >(null);
 
   useEffect(() => {
     setData(loadAppData());
@@ -34,8 +46,10 @@ function App() {
     return `${year}-W${String(weekNumber).padStart(2, '0')}`;
   }, []);
 
-  const openLog = (templateId: string) => setLogWorkoutTemplateId(templateId);
-  const closeLog = () => setLogWorkoutTemplateId(null);
+  const openLog = (templateId: string) => setLogWorkoutModalState({ mode: 'new', templateId });
+  const openEditLog = (type: 'running' | 'weights', entry: RunLogEntry | WeightsLogEntry) =>
+    setLogWorkoutModalState({ mode: 'edit', type, entry });
+  const closeLog = () => setLogWorkoutModalState(null);
 
   return (
     <div className="app-shell">
@@ -58,21 +72,77 @@ function App() {
         {view === 'today' && <TodayView data={data} currentWeekId={currentWeekId} onLogWorkout={openLog} />}
         {view === 'workout-library' && <WorkoutLibraryView data={data} setData={setData} />}
         {view === 'weekly-plan' && <WeeklyPlanView data={data} setData={setData} currentWeekId={currentWeekId} />}
-        {view === 'weekly-totals' && <WeeklyTotalsView data={data} currentWeekId={currentWeekId} />}
+        {view === 'weekly-totals' && (
+          <WeeklyTotalsView
+            data={data}
+            currentWeekId={currentWeekId}
+            onEditLog={openEditLog}
+          />
+        )}
       </main>
 
-      {logWorkoutTemplateId && (
+      {logWorkoutModalState && (
         <LogWorkoutModal
-          templateId={logWorkoutTemplateId}
+          templateId={
+            logWorkoutModalState.mode === 'new'
+              ? logWorkoutModalState.templateId
+              : logWorkoutModalState.entry.templateId
+          }
           data={data}
+          existingEntry={
+            logWorkoutModalState.mode === 'edit' ? logWorkoutModalState.entry : undefined
+          }
           onSave={(entry) => {
-            setData((prev) => ({
-              ...prev,
-              runLogs: entry.type === 'running' ? [...prev.runLogs, entry.payload] : prev.runLogs,
-              weightsLogs: entry.type === 'weights' ? [...prev.weightsLogs, entry.payload] : prev.weightsLogs,
-            }));
+            setData((prev) => {
+              if (entry.type === 'running') {
+                if (logWorkoutModalState?.mode === 'edit' && logWorkoutModalState.type === 'running') {
+                  return {
+                    ...prev,
+                    runLogs: prev.runLogs.map((log) =>
+                      log.id === entry.payload.id ? entry.payload : log,
+                    ),
+                  };
+                }
+                return {
+                  ...prev,
+                  runLogs: [...prev.runLogs, entry.payload],
+                };
+              }
+
+              if (logWorkoutModalState?.mode === 'edit' && logWorkoutModalState.type === 'weights') {
+                return {
+                  ...prev,
+                  weightsLogs: prev.weightsLogs.map((log) =>
+                    log.id === entry.payload.id ? entry.payload : log,
+                  ),
+                };
+              }
+
+              return {
+                ...prev,
+                weightsLogs: [...prev.weightsLogs, entry.payload],
+              };
+            });
             closeLog();
           }}
+          onDelete={
+            logWorkoutModalState.mode === 'edit'
+              ? () => {
+                  setData((prev) => ({
+                    ...prev,
+                    runLogs:
+                      logWorkoutModalState.type === 'running'
+                        ? prev.runLogs.filter((log) => log.id !== logWorkoutModalState.entry.id)
+                        : prev.runLogs,
+                    weightsLogs:
+                      logWorkoutModalState.type === 'weights'
+                        ? prev.weightsLogs.filter((log) => log.id !== logWorkoutModalState.entry.id)
+                        : prev.weightsLogs,
+                  }));
+                  closeLog();
+                }
+              : undefined
+          }
           onClose={closeLog}
         />
       )}

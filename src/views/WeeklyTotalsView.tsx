@@ -1,16 +1,24 @@
-import { AppData } from '../data';
+import { AppData, RunLogEntry, WeightsLogEntry } from '../data';
 
 interface Props {
   data: AppData;
   currentWeekId: string;
+  onEditLog: (type: 'running' | 'weights', entry: RunLogEntry | WeightsLogEntry) => void;
 }
 
-export function WeeklyTotalsView({ data, currentWeekId }: Props) {
+type WeeklyLogEntry = (RunLogEntry & { type: 'running' }) | (WeightsLogEntry & { type: 'weights' });
+
+export function WeeklyTotalsView({ data, currentWeekId, onEditLog }: Props) {
   const weekStart = getWeekStart(currentWeekId);
   const weekEnd = getWeekEnd(weekStart);
 
   const weeklyRunLogs = data.runLogs.filter((entry) => isInWeek(entry.date, weekStart, weekEnd));
   const weeklyWeightsLogs = data.weightsLogs.filter((entry) => isInWeek(entry.date, weekStart, weekEnd));
+
+  const weeklyHistory: WeeklyLogEntry[] = [
+    ...weeklyRunLogs.map((entry) => ({ ...entry, type: 'running' as const })),
+    ...weeklyWeightsLogs.map((entry) => ({ ...entry, type: 'weights' as const })),
+  ].sort((a, b) => parseLoggedAt(b.loggedAt).getTime() - parseLoggedAt(a.loggedAt).getTime());
 
   const totalMiles = weeklyRunLogs.reduce((sum, entry) => sum + entry.distanceMiles, 0);
   const totalMinutes = weeklyRunLogs.reduce((sum, entry) => sum + entry.durationMinutes, 0);
@@ -20,7 +28,7 @@ export function WeeklyTotalsView({ data, currentWeekId }: Props) {
   const totalLifted = weeklyWeightsLogs.reduce((sum, entry) => {
     return (
       sum +
-      entry.sets.reduce((setSum, set) => setSum + set.weightLbs * set.reps, 0)
+      entry.sets.reduce((setSum, set) => setSum + set.weightLbs * set.sets, 0)
     );
   }, 0);
 
@@ -41,6 +49,37 @@ export function WeeklyTotalsView({ data, currentWeekId }: Props) {
           <span className="stat-value">{totalLifted}</span>
         </div>
       </div>
+
+      <div className="log-history-card">
+        <h2>Completed Workout History</h2>
+        {weeklyHistory.length === 0 ? (
+          <p>No completed workouts logged this week.</p>
+        ) : (
+          <ul className="log-history-list">
+            {weeklyHistory.map((entry) => {
+              const template = data.templates.find((item) => item.id === entry.templateId);
+              return (
+                <li key={entry.id} className="log-history-item">
+                  <div className="log-history-row">
+                    <span className="log-history-title">{template?.name ?? 'Unnamed workout'}</span>
+                    <span className="log-history-time">{formatLoggedAt(entry.loggedAt)}</span>
+                  </div>
+                  <div className="log-history-detail">
+                    {entry.type === 'running'
+                      ? `${entry.distanceMiles.toFixed(1)} mi · ${entry.durationMinutes} min`
+                      : `${entry.sets.length} sets`}
+                  </div>
+                  <div className="log-history-actions">
+                    <button className="secondary-button" type="button" onClick={() => onEditLog(entry.type, entry)}>
+                      Edit
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
@@ -48,6 +87,27 @@ export function WeeklyTotalsView({ data, currentWeekId }: Props) {
 function isInWeek(dateString: string, weekStart: Date, weekEnd: Date) {
   const date = new Date(dateString);
   return date >= weekStart && date <= weekEnd;
+}
+
+function parseLoggedAt(value: string) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return new Date(value);
+}
+
+function formatLoggedAt(value: string) {
+  const date = parseLoggedAt(value);
+  const hasTime = !/^\d{4}-\d{2}-\d{2}$/.test(value);
+  return hasTime
+    ? date.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+    : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function getWeekStart(weekId: string) {

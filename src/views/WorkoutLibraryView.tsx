@@ -2,6 +2,7 @@ import { WorkoutTemplate, AppData, WorkoutType, generateId } from '../data';
 import { useMemo, useState } from 'react';
 
 const runningPresets = ['Tempo Run', 'Easy Run', 'Long Run', 'Fartlek Run', 'Interval Run'] as const;
+const weightPresets = ['Upper Body', 'Lower Body'] as const;
 
 const sections: { type: WorkoutType; label: string }[] = [
   { type: 'running', label: 'Running' },
@@ -71,7 +72,7 @@ export function WorkoutLibraryView({ data, setData }: Props) {
                   <div>
                     <div className="template-name">{template.name}</div>
                     <div className="template-meta">
-                      {template.runType ? <span className="template-tag">{template.runType}</span> : null}
+                      {template.tag ? <span className="template-tag">{template.tag}</span> : null}
                       {template.notes ? <span className="template-notes">{template.notes}</span> : null}
                     </div>
                   </div>
@@ -111,15 +112,18 @@ interface FormProps {
 
 function TemplateForm({ initial, onSave, onCancel }: FormProps) {
   const [name, setName] = useState(initial.name);
-  const [runType, setRunType] = useState(initial.runType ?? '');
+  const [tag, setTag] = useState(initial.tag ?? '');
   const [distanceMiles, setDistanceMiles] = useState(initial.distanceMiles?.toString() ?? '');
   const [durationMinutes, setDurationMinutes] = useState(initial.durationMinutes?.toString() ?? '');
+  const [weightLbs, setWeightLbs] = useState(initial.weightLbs?.toString() ?? '');
+  const [reps, setReps] = useState(initial.reps?.toString() ?? '');
   const [notes, setNotes] = useState(initial.notes ?? '');
 
   const isRunning = initial.type === 'running';
+  const tagOptions = isRunning ? runningPresets : weightPresets;
 
   const handlePresetClick = (preset: string) => {
-    setRunType(preset);
+    setTag(preset);
   };
 
   return (
@@ -129,50 +133,77 @@ function TemplateForm({ initial, onSave, onCancel }: FormProps) {
         <input value={name} onChange={(event) => setName(event.target.value)} />
       </div>
 
-      {isRunning ? (
-        <>
-          <div className="form-row">
-            <label>Type of run</label>
-            <div className="preset-picker">
-              {runningPresets.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  className={`preset-option ${runType === preset ? 'active' : ''}`}
-                  onClick={() => handlePresetClick(preset)}
-                >
-                  {preset}
-                </button>
-              ))}
-            </div>
+      <>
+        <div className="form-row">
+          <label>{isRunning ? 'Type of run' : 'Tag'}</label>
+          <div className="preset-picker">
+            {tagOptions.map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                className={`preset-option ${tag === preset ? 'active' : ''}`}
+                onClick={() => handlePresetClick(preset)}
+              >
+                {preset}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div className="form-row form-row-split">
-            <div>
-              <label>Distance (mi)</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={distanceMiles}
-                onChange={(event) => setDistanceMiles(event.target.value)}
-                placeholder="Optional"
-              />
-            </div>
-            <div>
-              <label>Time (minutes)</label>
-              <input
-                type="number"
-                min="0"
-                step="1"
-                value={durationMinutes}
-                onChange={(event) => setDurationMinutes(event.target.value)}
-                placeholder="Optional"
-              />
-            </div>
-          </div>
-        </>
-      ) : null}
+        <div className="form-row form-row-split">
+          {isRunning ? (
+            <>
+              <div>
+                <label>Distance (mi)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={distanceMiles}
+                  onChange={(event) => setDistanceMiles(event.target.value)}
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label>Time (minutes)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={durationMinutes}
+                  onChange={(event) => setDurationMinutes(event.target.value)}
+                  placeholder="Optional"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label>Weight (lbs)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={weightLbs}
+                  onChange={(event) => setWeightLbs(event.target.value)}
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label>Reps</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={reps}
+                  onChange={(event) => setReps(event.target.value)}
+                  placeholder="Optional"
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </>
 
       <div className="form-row">
         <label>Notes</label>
@@ -184,9 +215,11 @@ function TemplateForm({ initial, onSave, onCancel }: FormProps) {
             onSave({
               ...initial,
               name: name.trim(),
-              runType: runType || undefined,
-              distanceMiles: distanceMiles ? parseFloat(distanceMiles) : undefined,
-              durationMinutes: durationMinutes ? parseInt(durationMinutes, 10) : undefined,
+              tag: tag || undefined,
+              distanceMiles: isRunning && distanceMiles ? parseFloat(distanceMiles) : undefined,
+              durationMinutes: isRunning && durationMinutes ? parseInt(durationMinutes, 10) : undefined,
+              weightLbs: !isRunning && weightLbs ? parseInt(weightLbs, 10) : undefined,
+              reps: !isRunning && reps ? parseInt(reps, 10) : undefined,
               notes: notes.trim() || undefined,
             })
           }

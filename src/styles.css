@@ -112,6 +112,121 @@ textarea {
   color: #94a3b8;
 }
 
+.weekly-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.calendar-day {
+  padding: 0.9rem 0.75rem;
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 1rem;
+  color: #e5e7eb;
+  display: grid;
+  gap: 0.35rem;
+  text-align: left;
+}
+
+.calendar-day.active {
+  border-color: #3b82f6;
+  background: #1e293b;
+}
+
+.calendar-day span {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.calendar-day strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1rem;
+}
+
+.day-panel {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.day-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.day-subtitle {
+  color: #94a3b8;
+}
+
+.scheduled-list,
+.available-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.scheduled-card,
+.available-card {
+  background: #0f172a;
+  border: 1px solid #1f2937;
+  border-radius: 1rem;
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.available-card {
+  cursor: pointer;
+}
+
+.available-card input {
+  margin: 0.25rem 0 0 0;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.available-card div,
+.scheduled-card div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.available-section h2 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 860px) {
+  .weekly-calendar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .weekly-calendar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .day-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 .library-section,
 .plan-section,
 .card,
@@ -125,6 +240,15 @@ textarea {
   border-radius: 1rem;
   padding: 1.25rem;
   margin-bottom: 1.5rem;
+}
+
+.today-card.completed {
+  opacity: 0.55;
+  background: #0f172a;
+}
+
+.completed-section h2 {
+  margin-top: 0;
 }
 
 .section-header,
