@@ -29,8 +29,11 @@ export function TodayView({ data, currentWeekId, onLogWorkout }: Props) {
 
       {activeTemplates.length === 0 ? (
         <div className="empty-state-card">
-          <p>No active workouts for today.</p>
-          <p>Completed workouts move below once logged.</p>
+          {completedTemplates.length > 0 ? (
+            <p>Good Fucking Shit. Way to get after it today.</p>
+          ) : (
+            <p>Who's gonna carry the boats</p>
+          )}
         </div>
       ) : (
         <div className="today-list">
