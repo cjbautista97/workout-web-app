@@ -29,15 +29,17 @@ export function WorkoutLibraryView({ data, setData }: Props) {
   };
 
   const handleSave = (template: WorkoutTemplate) => {
-    if (editingId) {
+    const isNewTemplate = editingId?.startsWith('new-');
+
+    if (isNewTemplate) {
       setData({
         ...data,
-        templates: data.templates.map((item) => (item.id === template.id ? template : item)),
+        templates: [...data.templates, { ...template, id: generateId() }],
       });
     } else {
       setData({
         ...data,
-        templates: [...data.templates, { ...template, id: generateId() }],
+        templates: data.templates.map((item) => (item.id === template.id ? template : item)),
       });
     }
     setEditingId(null);
