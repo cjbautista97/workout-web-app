@@ -4,6 +4,9 @@ export interface WorkoutTemplate {
   id: string;
   type: WorkoutType;
   name: string;
+  runType?: string;
+  distanceMiles?: number;
+  durationMinutes?: number;
   notes?: string;
 }
 
